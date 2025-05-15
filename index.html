@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="card">
+    <div class="search">
+      <input type="text" placeholder="Enter city name" spellcheck="false">
+      <button><img src="search.jpg" class="search-icon" alt="Search"></button>
+    </div>
+
+    <div class="favorites">
+      <select id="favoriteCities">
+        <option value="">-- Select a favorite city --</option>
+      </select>
+      <button id="saveBtn">Save City</button>
+    </div>
+
+    <div class="error">
+      <p>Invalid city name</p>
+    </div>
+
+    <div class="weather">
+      <img src="rain.jpeg" class="weather-icon" alt="Weather Icon">
+      <h1 class="temp">22°C</h1>
+      <h2 class="city">New York</h2>
+
+      <div class="details">
+        <div class="col">
+          <img src="humidity.jpeg" alt="Humidity">
+          <div>
+            <p class="humidity">50%</p>
+            <p>Humidity</p>
+          </div>
+        </div>
+        <div class="col">
+          <img src="wind.png" alt="Wind">
+          <div>
+            <p class="wind">15 km/h</p>
+            <p>Wind Speed</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const apiKey = "39ae269cf25db65b67cd2622ee48e7ad";
+    const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
+
+    const searchBox = document.querySelector(".search input");
+    const searchBtn = document.querySelector(".search button");
+    const weatherIcon = document.querySelector(".weather-icon");
+    const saveBtn = document.getElementById("saveBtn");
+    const favoriteCities = document.getElementById("favoriteCities");
+
+    async function checkWeather(city) {
+      const response = await fetch(apiUrl + city + `&appid=${apiKey}`);
+
+      if (response.status === 404) {
+        document.querySelector(".error").style.display = "block";
+        document.querySelector(".weather").style.display = "none";
+      } else {
+        const data = await response.json();
+
+        document.querySelector(".error").style.display = "none";
+        document.querySelector(".city").innerHTML = data.name;
+        document.querySelector(".temp").innerHTML = Math.round(data.main.temp) + "°C";
+        document.querySelector(".humidity").innerHTML = data.main.humidity + "%";
+        document.querySelector(".wind").innerHTML = data.wind.speed + " km/h";
+
+        if (data.weather[0].main === "Clouds") {
+          weatherIcon.src = "clouds.png";
+        } else if (data.weather[0].main === "Clear") {
+          weatherIcon.src = "clear.jpg";
+        } else if (data.weather[0].main === "Rain") {
+          weatherIcon.src = "rain.jpeg";
+        } else if (data.weather[0].main === "Drizzle") {
+          weatherIcon.src = "drizzle.jpeg";
+        } else if (data.weather[0].main === "Mist") {
+          weatherIcon.src = "mist.webp";
+        }
+
+        document.querySelector(".weather").style.display = "block";
+      }
+    }
+
+    searchBtn.addEventListener("click", () => {
+      const city = searchBox.value.trim();
+      if (city !== "") {
+        checkWeather(city);
+      }
+    });
+
+    saveBtn.addEventListener("click", () => {
+      const city = searchBox.value.trim();
+      if (city !== "") {
+        let favorites = JSON.parse(localStorage.getItem("favoriteCities")) || [];
+        if (!favorites.includes(city)) {
+          favorites.push(city);
+          localStorage.setItem("favoriteCities", JSON.stringify(favorites));
+          populateFavorites();
+          alert(`${city} saved to favorites!`);
+        }
+      }
+    });
+
+    favoriteCities.addEventListener("change", () => {
+      const selectedCity = favoriteCities.value;
+      if (selectedCity !== "") {
+        searchBox.value = selectedCity;
+        checkWeather(selectedCity);
+      }
+    });
+
+    function populateFavorites() {
+      favoriteCities.innerHTML = `<option value="">-- Select a favorite city --</option>`;
+      const favorites = JSON.parse(localStorage.getItem("favoriteCities")) || [];
+      favorites.forEach(city => {
+        const option = document.createElement("option");
+        option.value = city;
+        option.textContent = city;
+        favoriteCities.appendChild(option);
+      });
+    }
+
+    populateFavorites(); // Load on page start
+  </script>
+
+</body>
+</html>
